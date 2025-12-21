@@ -20,7 +20,7 @@ function SignUp(){
             });
             if(response.data.success) {
                 toast.success("You have successfully registered");
-                router.push('/');
+                //router.push('/');
             }
         }
         catch(error) {
@@ -29,29 +29,55 @@ function SignUp(){
         }
     }
 
+    const validationSchema = Yup.object().shape({
+        name: Yup.string()
+            .required('Please, enter your name'),
+        email: Yup.string()
+            .required('Please, enter your email')
+            .email('Wrong format of email'),
+        organization: Yup.string()
+            .required('Please, enter your organization'),
+        password: Yup.string()
+            .required('Please, enter your password')
+            .min(8, 'Password must be at least 8 characters long'),
+        confirm_password: Yup.string()
+            .required('Please, confirm your password')
+            .oneOf([Yup.ref('password'), null], 'Passwords must match')
+    })
+
     return(
-        <div>
+        <div className="auth-page">
             <Formik
             initialValues={{
                 name: '',
                 email: '',
                 password: '',
+                confirm_password: '',
                 organization: ''
             }}
             onSubmit={register}
+            validationSchema={validationSchema}
             >
-                <Form>
+                <Form className="auth-form">
                     <div>
-                        <Field placeholder='name' name='name' id='name' />
+                        <Field placeholder='Name' type='text' name='name' id='name' />
+                        <ErrorMessage name='name' component='div' className="error_message" />
                     </div>
                     <div>
-                        <Field placeholder='organisation' name='organization' id='organization' />
+                        <Field placeholder='Organisation' type='text' name='organization' id='organization' />
+                        <ErrorMessage name='organization' component='div' className="error_message" />
                     </div>
                     <div>
-                        <Field placeholder='email' type='email' name='email' id='email' />
+                        <Field placeholder='Email' type='email' name='email' id='email' />
+                        <ErrorMessage name='email' component='div' className="error_message" />
                     </div>
                     <div>
-                        <Field placeholder='password' type='password' name='password' id='password' />
+                        <Field placeholder='Password' type='password' name='password' id='password' />
+                        <ErrorMessage name='password' component='div' className="error_message" />
+                    </div>
+                    <div>
+                        <Field placeholder='Confirm password' type='password' name='confirm_password' id='confirm_password' />
+                        <ErrorMessage name='confirm_password' component='div' className="error_message" />
                     </div>
                     <button type="submit">Sign up</button>
                 </Form>
