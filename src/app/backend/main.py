@@ -1,9 +1,10 @@
-from flask import Flask, request
+from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
 from extensions import db
+from user_check import load_user
 
 app = Flask(__name__)
 CORS(app, 
@@ -16,6 +17,8 @@ CORS(app,
 load_dotenv()
 
 from controllers.user import mod_user
+from controllers.dashboard import mod_dashboard
+from controllers.auth import mod_auth
 
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
@@ -30,6 +33,10 @@ db.init_app(app)
 migrate = Migrate(app, db)
 
 app.register_blueprint(mod_user, url_prefix='/api')
+app.register_blueprint(mod_dashboard, url_prefix='/api')
+app.register_blueprint(mod_auth, url_prefix='/api')
+
+app.before_request(load_user)
 
 if __name__ == '__main__':
     with app.app_context():

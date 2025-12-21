@@ -72,8 +72,22 @@ def log_in():
             token,
             httponly=True,
             samesite='None',
+            secure=True,
             max_age=30*24*60*60 if remember else 24*60*60
         )
         return response, 200
     response = make_response(jsonify({'success': False, 'message': 'Wrong email or password'}))
     return response, 401
+
+@mod_user.route('/user/logout', methods=['POST'])
+def logout():
+    response = make_response(jsonify({'success': True, 'message': 'Logged out successfully'}))
+    response.set_cookie(
+        'auth_token', 
+        '', 
+        httponly=True,
+        samesite='None',
+        secure=True,
+        expires=0
+    )
+    return response, 200

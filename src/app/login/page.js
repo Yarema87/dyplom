@@ -24,24 +24,45 @@ function LogIn() {
             }
         }
         catch(error) {
-            toast.error('Some error occured');
-            console.error('Error on loggin in:', error);
+            if(error.response && error.response.status === 401){
+                toast.error('Wrong email or password');
+            }
+            else{
+                toast.error('Some error occured');
+                console.error('Error on loggin in:', error);
+            }
         }
     }
+
+    const validationSchema = Yup.object().shape({
+        email: Yup.string()
+            .required('Please, enter your email'),
+        password: Yup.string()
+            .required('Please, enter your password')
+    });
+
     return(
-        <div>
+        <div className="auth-page">
             <Formik
             initialValues={{
                 email: '',
-                password: ''
+                password: '',
+                remember: false
             }}
-            onSubmit={login}>
-                <Form>
+            onSubmit={login}
+            validationSchema={validationSchema}>
+                <Form className="auth-form">
                     <div>
-                        <Field placeholder='email' type='email' name='email' id='email' />
+                        <Field placeholder='Email' type='email' name='email' id='email' />
+                        <ErrorMessage name='email' component='div' className="error_message" />
                     </div>
                     <div>
-                        <Field placeholder='password' type='password' name='password' id='password' />
+                        <Field placeholder='Password' type='password' name='password' id='password' />
+                        <ErrorMessage name='password' component='div' className="error_message" />
+                    </div>
+                    <div className="checkbox-row">
+                        <label>Remember me</label>
+                        <Field type='checkbox' name='remember' id='remember' />
                     </div>
                     <button type="submit">Log in</button>
                 </Form>

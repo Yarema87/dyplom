@@ -1,7 +1,27 @@
+'use client';
+
 import Image from "next/image";
 import styles from "./page.module.css";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function Home() {
+  const [user, setUser] = useState('');
+  const router = useRouter();
+
+  useEffect(() => {
+    const url = 'http://localhost:5000/api/dashboard';
+    axios.get(url, {withCredentials: true})
+    .then(response => {
+      setUser(response.data.user);
+    })
+    .catch(error => {
+      console.error('Error on fetching user:', error);
+      router.push('/login');
+    })
+  }, [])
+
   return (
     <div className={styles.page}>
       <main className={styles.main}>
