@@ -1,6 +1,6 @@
 from flask import g, Blueprint
 
-mod_auth = Blueprint('auth', __name__, url_prefix='auth')
+mod_auth = Blueprint('auth', __name__, url_prefix='/auth')
 
 @mod_auth.route('/auth')
 def check_auth():

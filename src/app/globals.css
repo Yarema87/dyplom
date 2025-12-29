@@ -136,3 +136,395 @@ a {
   font-size: 14px;
   margin-top: 5px;
 }
+
+.dashboard {
+  min-height: 100vh;
+  padding: 32px;
+  background-color: #f5f7fb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.dashboard-header h1{
+  font-size: 28px;
+  font-weight: 600;
+  color: #1f2933;
+}
+
+.add-device-btn,
+.primary-btn{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.primary-btn {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.add-device-btn span{
+  font-size: 18px;
+}
+
+.add-device-btn:hover,
+.primary-btn:hover{
+  background-color: #1d4ed8;
+}
+
+.empty-state{
+  background-color: white;
+  border-radius: 20px;
+  padding: 64px 24px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.empty-state h3{
+  font-size: 20px;
+  color: #1f2933;
+}
+
+.empty-state p{
+  margin-top: 8px;
+  color: #6b7280;
+}
+
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.device-card {
+  background-color: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.device-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.device-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.device-card-header h2 {
+  font-size: 18px;
+  margin-bottom: 4px;
+  color: #111827;
+}
+
+.device-card-header p {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.device-status {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+.device-status.active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.divider {
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 16px 0;
+}
+
+.device-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.danger-link {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.danger-link:hover {
+  color: #dc2626;
+}
+
+.add-device-form {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+}
+
+.add-device-form.invisible {
+  display: none;
+}
+
+.add-device-form form{
+  width: 420px;
+  max-width: 90%;
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.add-device-form form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.add-device-form label {
+  font-size: 0.85rem;
+  color: #555555;
+}
+
+.add-device-form input,
+.add-device-form textarea,
+.add-device-form select{
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.add-device-form textarea{
+  resize: vertical;
+  min-height: 80px;
+}
+
+.add-device-form input:focus,
+.add-device-form textarea:focus{
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.add-device-form button{
+  margin-top: 0.5rem;
+  padding: 0.7rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.add-device-form button:hover{
+  background-color: #1e4fd8;
+}
+
+.device-page{
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 60px);
+}
+
+.device-page-card{
+  width: 100%;
+  max-width: 900px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.device-title{
+  font-size: 28px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.device-description{
+  font-size: 15px;
+  color: #4b5563;
+  line-height: 1.6;
+  max-width: 700px;
+}
+
+.device-map{
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.device-map iframe{
+  display: block;
+  width: 100%;
+  height: 300px;
+  border: none;
+}
+
+.device-meta{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.device-meta p{
+  margin: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.device-meta span:first-child{
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status.online{
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.status.offline{
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.status.warning{
+  background-color: #fff7ed;
+  color: #ea580c;
+}
+
+.status.registered{
+  background-color: #f5f7fb;
+  color: #2563eb;
+}
+
+.device-sensors {
+  margin-top: 24px;
+  padding: 20px 24px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sensors-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sensors-title{
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+}
+
+.add-sensors-btn{
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid #2563eb;
+  background-color: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.add-sensors-btn:hover{
+  background-color: #1e40af;
+}
+
+.add-sensors-btn:active{
+  transform: scale(0.97);
+}
+
+.sensors-list{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sensor-badge{
+  padding: 6px 12px;
+  font-size: 12px;
+  background-color: #eef2ff;
+  color: #3730a3;
+  border-radius: 999px;
+  border: 1px solid #c7d2fe;
+  white-space: nowrap;
+}
+
+.sensors-empty{
+  font-size: 14px;
+  color: #9ca3af;
+  margin: 0;
+}

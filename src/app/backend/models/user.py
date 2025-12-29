@@ -9,3 +9,5 @@ class User(db.Model):
     organization = db.Column(db.String(50))
     access = db.Column(db.String(5), nullable=False)
     approved = db.Column(db.Boolean)
+
+    device = db.relationship('Device', back_populates='owner')

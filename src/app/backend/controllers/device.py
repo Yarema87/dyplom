@@ -1,0 +1,109 @@
+from flask import Blueprint, make_response, jsonify, request, g
+from models.device import Device
+from datetime import datetime, timedelta, timezone
+from extensions import db
+from azure.iot.hub import IoTHubRegistryManager
+from cryptography.fernet import Fernet
+import os
+from user_check import login_required
+
+mod_device = Blueprint('device', __name__, url_prefix='/device')
+
+@mod_device.route('/device/user/<int:user_id>', methods=['GET'])
+def get_user_devices(user_id):
+    devices = Device.query.filter_by(user_id=user_id).all()
+    if not devices:
+        response = make_response(jsonify({'success': False, 'message': 'User does not have any devices now'}))
+        return response, 404
+    devices_data = [
+        {
+            'id': device.id,
+            'name': device.name,
+            'description': device.description,
+            'type': device.type,
+            'latitude': device.latitude,
+            'longitude': device.longitude,
+            'user_id': device.user_id,
+            'status': device.status,
+            'created_at': device.created_at,
+            'last_seen_at': device.last_seen_at
+        }
+        for device in devices
+    ]
+    response = make_response(jsonify({'success': True, 'devices': devices_data}))
+    return response, 200
+
+
+@mod_device.route('/device/add', methods=['POST'])
+@login_required
+def add_device():
+    data = request.get_json()
+
+    utc_plus_3 = timezone(timedelta(hours=3))
+    time = datetime.now(utc_plus_3).replace(microsecond=0)
+    formatted_time = time.strftime('%d.%m.%Y %H:%M')
+    
+    name = data.get('name')
+    description = data.get('description')
+    type = data.get('type')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    connection_id = data.get('connection')
+    user_id = g.user['user_id']
+    status = 'registered'
+    created_at = formatted_time
+    last_seen_at = formatted_time
+
+    registry = IoTHubRegistryManager(os.getenv("AZURE_IOT_HUB_CONNECTION_STRING"))
+    device = registry.get_device(connection_id)
+    if not device:
+        return jsonify({"error": "Device not found in IoT Hub"}), 404
+    primary_key = device.authentication.symmetric_key.primary_key
+    conn_str = f"HostName={os.getenv('HUB_NAME')};DeviceId={connection_id};SharedAccessKey={primary_key}"
+    fernet_key = Fernet.generate_key()
+    fernet = Fernet(fernet_key)
+    encrypted_connection = fernet.encrypt(conn_str.encode())
+
+    model = Device()
+    model.name = name
+    model.description = description
+    model.type = type
+    model.latitude = latitude
+    model.longitude = longitude
+    model.connection_id = encrypted_connection
+    model.user_id = user_id
+    model.status = status
+    model.created_at = created_at
+    model.last_seen_at = last_seen_at
+    try:
+        db.session.add(model)
+        db.session.commit()
+        response = make_response(jsonify({'success': True}))
+        return response, 201
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({'success': False, 'error': e}))
+        return response, 400
+    
+@mod_device.route('/device/<int:device_id>', methods=['GET'])
+def get_device(device_id):
+    device = Device.query.filter_by(id=device_id).first()
+    if not device:
+        response = make_response({'success': False, 'error': 'Device not found'})
+        return response, 404
+    device_data = {
+            'id': device.id,
+            'name': device.name,
+            'description': device.description,
+            'type': device.type,
+            'latitude': device.latitude,
+            'longitude': device.longitude,
+            'user_id': device.user_id,
+            'status': device.status,
+            'created_at': device.created_at,
+            'last_seen_at': device.last_seen_at
+        }
+    response = make_response(jsonify({'success': True, 'device': device_data}))
+    return response, 200
+    
+
