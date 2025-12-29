@@ -19,6 +19,9 @@ load_dotenv()
 from controllers.user import mod_user
 from controllers.dashboard import mod_dashboard
 from controllers.auth import mod_auth
+from controllers.device import mod_device
+from controllers.sensors import mod_sensor
+from controllers.device_credentials import mod_credentials
 
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
@@ -35,6 +38,9 @@ migrate = Migrate(app, db)
 app.register_blueprint(mod_user, url_prefix='/api')
 app.register_blueprint(mod_dashboard, url_prefix='/api')
 app.register_blueprint(mod_auth, url_prefix='/api')
+app.register_blueprint(mod_device, url_prefix='/api')
+app.register_blueprint(mod_sensor, url_prefix='/api')
+app.register_blueprint(mod_credentials, url_prefix='/api')
 
 app.before_request(load_user)
 
