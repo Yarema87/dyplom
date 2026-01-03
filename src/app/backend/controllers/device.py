@@ -1,9 +1,8 @@
 from flask import Blueprint, make_response, jsonify, request, g
 from models.device import Device
 from datetime import datetime, timedelta, timezone
-from extensions import db
+from extensions import db, fernet
 from azure.iot.hub import IoTHubRegistryManager
-from cryptography.fernet import Fernet
 import os
 from user_check import login_required
 
@@ -60,8 +59,6 @@ def add_device():
         return jsonify({"error": "Device not found in IoT Hub"}), 404
     primary_key = device.authentication.symmetric_key.primary_key
     conn_str = f"HostName={os.getenv('HUB_NAME')};DeviceId={connection_id};SharedAccessKey={primary_key}"
-    fernet_key = Fernet.generate_key()
-    fernet = Fernet(fernet_key)
     encrypted_connection = fernet.encrypt(conn_str.encode())
 
     model = Device()
@@ -105,5 +102,20 @@ def get_device(device_id):
         }
     response = make_response(jsonify({'success': True, 'device': device_data}))
     return response, 200
-    
+
+@mod_device.route('/device/remove/<int:device_id>', methods=['DELETE'])
+def delete_device(device_id):
+    device = Device.query.filter_by(id=device_id).first()
+    if not device:
+        response = make_response(jsonify({'success': False, 'error': 'device not found'}))
+        return response, 404
+    try:
+        db.session.delete(device)
+        db.session.commit()
+        response = make_response(jsonify({'success': True}))
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({'success': False, 'error': e}))
+        return response, 400
 

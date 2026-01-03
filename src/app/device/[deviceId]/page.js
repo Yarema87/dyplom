@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import AddSensorForm from "@/app/components/add-sensor";
+import Link from "next/link";
 
 function DevicePage({params}){
     const [device, setDevice] = useState('');
@@ -69,9 +70,11 @@ function DevicePage({params}){
                     {sensors.length > 0 ? (
                         <div className="sensors-list">
                             {sensors.map(sensor => (
-                                <span key={sensor.id} className="sensor-badge">
-                                    {sensor.name}
-                                </span>
+                                <Link key={sensor.id} href={`/sensor/${sensor.id}`}>
+                                    <span className="sensor-badge">
+                                        {sensor.name}
+                                    </span>
+                                </Link>
                             ))}
                         </div>
                     ) : (

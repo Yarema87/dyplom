@@ -16,4 +16,3 @@ class Device(db.Model):
 
     owner = db.relationship('User', back_populates='device')
     sensors = db.relationship('Sensor', back_populates='device', cascade='all, delete-orphan')
-    credentials = db.relationship('DeviceCredentials', back_populates='device')
