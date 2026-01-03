@@ -48,3 +48,20 @@ def add_sensor():
         db.session.rollback
         response = make_response(jsonify({'success': False, 'error': e}))
         return response, 400
+    
+@mod_sensor.route('/sensors/<int:sensor_id>', methods=['GET'])
+def get_sensor(sensor_id):
+    sensor = Sensor.query.filter_by(id=sensor_id).first()
+    if not sensor:
+        response = make_response(jsonify({'success': False, 'message': 'Sensor not found'}))
+        return response, 404
+    sensor_data = {
+        'id': sensor.id,
+        'name': sensor.name,
+        'unit': sensor.unit,
+        'data_type': sensor.data_type,
+        'min_value': sensor.min_value,
+        'max_value': sensor.max_value
+    }
+    response = make_response(jsonify({'success': True, 'sensor': sensor_data}))
+    return response, 200

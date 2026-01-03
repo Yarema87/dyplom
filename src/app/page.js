@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import AddDeviceForm from "./components/add-device";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 export default function Home() {
   const [user, setUser] = useState('');
@@ -38,6 +39,25 @@ export default function Home() {
     })
   }, [user])
 
+  const removeDevice = (device_id) => {
+    const url = (`http://localhost:5000/api/device/remove/${device_id}`);
+    axios.delete(url, {
+      headers: {
+              'Content-Type': 'application/json'
+          },
+          withCredentials: true
+      })
+    .then(response => {
+      if(response.data.success){
+        toast.success('Device has been deleted');
+      }
+    })
+    .catch(error => {
+      toast.error('Something went wrong');
+      console.error('Error on deleting device:', error);
+    })
+  }
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -67,7 +87,7 @@ export default function Home() {
               <div className="divider"></div>
               <div className="device-actions">
                 <Link href={`/device/${device.id}`}><button className="link-btn">View details</button></Link>
-                <button className="danger-link">Remove</button>
+                <button className="danger-link" onClick={() => removeDevice(device.id)}>Remove</button>
               </div>
             </div>
           ))}

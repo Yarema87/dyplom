@@ -11,3 +11,4 @@ class Sensor(db.Model):
     max_value = db.Column(db.Integer)
 
     device = db.relationship('Device', back_populates='sensors')
+    telemetry = db.relationship('Telemetry', back_populates='sensor')
