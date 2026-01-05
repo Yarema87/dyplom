@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import debounce from "lodash.debounce";
+import Statistics from "@/app/components/sensor-chart";
 
 function SensorPage({params}){
     const [sensor, setSensor] = useState('');
@@ -41,6 +40,7 @@ function SensorPage({params}){
                         {sensor.min_value}{sensor.unit} - {sensor.max_value}{sensor.unit}
                     </p>
                 </div>
+                <Statistics sensor_id={sensor.id}/>
             </div>
         </div>
     )
