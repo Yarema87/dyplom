@@ -10,7 +10,7 @@ class Device(db.Model):
     longitude = db.Column(db.String(20), nullable=False)
     status = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.String(20), nullable=False)
-    last_seen_at = db.Column(db.String(20), nullable=False)
+    last_seen_at = db.Column(db.DateTime, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     connection_id = db.Column(db.String(100), nullable=False)
 
