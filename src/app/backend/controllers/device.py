@@ -8,6 +8,17 @@ from user_check import login_required
 
 mod_device = Blueprint('device', __name__, url_prefix='/device')
 
+def device_status(last_seen):
+    if not last_seen:
+        return 'Not registered'
+    delta = datetime.utcnow() - last_seen
+    if delta <= timedelta(seconds=30):
+        return 'Online'
+    elif delta <= timedelta(minutes=3):
+        return 'Delayed'
+    else:
+        return 'Offline'
+
 @mod_device.route('/device/user/<int:user_id>', methods=['GET'])
 def get_user_devices(user_id):
     devices = Device.query.filter_by(user_id=user_id).all()
@@ -23,7 +34,7 @@ def get_user_devices(user_id):
             'latitude': device.latitude,
             'longitude': device.longitude,
             'user_id': device.user_id,
-            'status': device.status,
+            'status': device_status(device.last_seen_at),
             'created_at': device.created_at,
             'last_seen_at': device.last_seen_at
         }
@@ -96,7 +107,7 @@ def get_device(device_id):
             'latitude': device.latitude,
             'longitude': device.longitude,
             'user_id': device.user_id,
-            'status': device.status,
+            'status': device_status(device.last_seen_at),
             'created_at': device.created_at,
             'last_seen_at': device.last_seen_at
         }
@@ -118,4 +129,3 @@ def delete_device(device_id):
         db.session.rollback()
         response = make_response(jsonify({'success': False, 'error': e}))
         return response, 400
-

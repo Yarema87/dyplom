@@ -8,6 +8,7 @@ from models.event_offset import EventOffset
 from dotenv import load_dotenv
 import os
 from flask import Flask
+from datetime import datetime
 
 load_dotenv()
 
@@ -41,6 +42,8 @@ def on_event(partition_context, event):
             model = Telemetry()
             sensor_id = payload['sensor']
             timestamp = payload['timestamp']
+            device = Device.query.filter_by(id=payload['device_id']).first()
+            device.last_seen_at = datetime.fromisoformat(timestamp)
             value = payload['value']
             model.sensor_id = sensor_id
             model.value = value

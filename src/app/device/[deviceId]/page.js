@@ -1,14 +1,33 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import AddSensorForm from "@/app/components/add-sensor";
 import Link from "next/link";
+import Statistics from "@/app/components/sensor-chart";
 
 function DevicePage({params}){
     const [device, setDevice] = useState('');
     const [sensors, setSensors] = useState([]);
     const [visibleForm, setVisibleForm] = useState(false);
+    const [visibleList, setVisibleList] = useState(false);
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const telemetry_sensors = searchParams.get('sensors')?.split(',').filter(Boolean).map(Number) || [];
+
+    const toggleSensor = (id) => {
+        const updated = telemetry_sensors.includes(id) ? telemetry_sensors.filter(s => s !== id) : [...telemetry_sensors, id];
+        if (updated.length === 0){
+            router.push('?', {scroll: false})
+        }
+        else{
+            router.push(
+                `?sensors=${updated.join(',')}`,
+                {scroll: false}
+            );
+        }
+    };
 
     useEffect(() => {
         async function fetchParams() {
@@ -32,6 +51,26 @@ function DevicePage({params}){
         }
         fetchParams();
     }, [params])
+
+    useEffect(() => {
+        if(telemetry_sensors.length > 0){
+            localStorage.setItem(
+                `device-${device.id}-sensors`, 
+                JSON.stringify(telemetry_sensors)
+            );
+        }
+    }, [telemetry_sensors, device.id])
+
+    useEffect(() => {
+        if(telemetry_sensors.length === 0){
+            const saved = localStorage.getItem(`device-${device.id}-sensors`);
+            if (saved && saved.length > 0){
+                router.push(`?sensors=${JSON.parse(saved).join(',')}`, {
+                    scroll: false
+                })
+            }
+        }
+    }, [device.id])
 
     return(
         <div className="device-page">
@@ -59,7 +98,7 @@ function DevicePage({params}){
                     </p>
                     <p>
                         <span>Last activity:</span>
-                        {device.last_seen_at}
+                        {new Date(device.last_seen_at).toLocaleString()}
                     </p>
                 </div>
                 <div className="device-sensors">
@@ -83,6 +122,36 @@ function DevicePage({params}){
                         </p>
                     )}
                     <AddSensorForm visible={visibleForm} setVisible={setVisibleForm} deviceId={device.id} />
+                </div>
+                <div className="telemetry-section">
+                    <button 
+                    className="telemetry-toggle"
+                    onClick={() => setVisibleList(!visibleList)}
+                    >
+                        {visibleList ? 'Hide sensors list' : 'Add sensor charts'}
+                    </button>
+                    {visibleList && (
+                        <ul className="telemetry-sensor-list">
+                            {sensors.map(sensor => (
+                                <li key={sensor.id} className="telemetry-sensor-item">
+                                    <label>
+                                        <input 
+                                            type='checkbox' 
+                                            checked={telemetry_sensors.includes(sensor.id)} 
+                                            onChange={() => toggleSensor(sensor.id)}
+                                        />
+                                        <span>{sensor.name}</span>
+                                    </label>
+                                    
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                    <div className="telemetry-charts">
+                        {telemetry_sensors.map(sensor => (
+                            <Statistics sensor_id={sensor} key={sensor}/>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

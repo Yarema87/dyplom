@@ -40,9 +40,8 @@ function Statistics({sensor_id}){
 
     const chartData = telemetry.map(t => ({
         ...t,
-        time: new Date(t.timestamp).toLocaleTimeString()
+        time: new Date(t.timestamp).toLocaleString()
     }));
-
 
     return(
         <div>
@@ -52,7 +51,10 @@ function Statistics({sensor_id}){
                         <LineChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey='time' />
-                            <YAxis label={{value: sensor.unit, angle: -90, position: 'insideLeft'}} />
+                            <YAxis 
+                            label={{value: sensor.unit, angle: -90, position: 'insideLeft'}} 
+                            domain={['dataMin - 1', 'dataMax + 1']}
+                            />
                             <Tooltip />
                             <Line type='monotone' dataKey='value' stroke="#8884d8" strokeWidth={3} />
                         </LineChart>
