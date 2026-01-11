@@ -45,24 +45,26 @@ export default function Home() {
   }, [user])
 
   useEffect(() => {
+        if (!user) return;
         if(telemetry_sensors.length > 0){
             localStorage.setItem(
-                `dashboard-sensors`, 
+                `dashboard-user${user.user_id}-sensors`, 
                 JSON.stringify(telemetry_sensors)
             );
         }
-    }, [telemetry_sensors])
+    }, [telemetry_sensors, user])
 
     useEffect(() => {
+      if(!user) return;
         if(telemetry_sensors.length === 0){
-            const saved = localStorage.getItem(`dashboard-sensors`);
+            const saved = localStorage.getItem(`dashboard-user${user.user_id}-sensors`);
             if (saved && saved.length > 0){
                 router.push(`?sensors=${JSON.parse(saved).join(',')}`, {
                     scroll: false
                 })
             }
         }
-    }, [])
+    }, [user])
 
   const getDeviceSensors = (device_id) => {
     const url = (`http://localhost:5000/api/sensors/device/${device_id}`);

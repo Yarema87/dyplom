@@ -8,6 +8,7 @@ import axios from "axios";
 
 function Header() {
     const [user, setUser] = useState('');
+    const admin = user?.access === 'admin';
     const log_out = () => {
         const url = 'http://localhost:5000/api/user/logout';
         axios.post(url, {}, {
@@ -50,9 +51,15 @@ function Header() {
                     <Link href='/signup' className="primary">Sign up</Link>
                 </nav>
             )}
-            {user && (
+            {user && !admin && (
                 <nav>
                     <button onClick={() => log_out()}>Log out</button>
+                </nav>
+            )}
+            {admin && (
+                <nav>
+                    <button onClick={() => log_out()}>Log out</button>
+                    <Link href='/admin'>Admin</Link>
                 </nav>
             )}
         </header>

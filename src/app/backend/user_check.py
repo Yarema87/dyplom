@@ -22,3 +22,13 @@ def login_required(fn):
             return jsonify({'error': 'Unauthorized'}), 401
         return fn(*args, **kwargs)
     return wrapper
+
+def admin_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        if g.user is None:
+            return jsonify({'error': 'Unauthorized'}), 401
+        if g.user.get('access') != 'admin':
+            return jsonify({'error': 'Access denied'}), 403
+        return fn(*args, **kwargs)
+    return wrapper
