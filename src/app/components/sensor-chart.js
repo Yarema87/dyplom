@@ -15,7 +15,6 @@ function Statistics({sensor_id}){
         axios.get(url)
         .then(response => {
             setTelemetry(response.data.telemetry);
-            console.log(response.data.telemetry);
         })
         .catch(error => {
             console.error('Error on getting telemetry:', error);

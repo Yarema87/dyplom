@@ -3,12 +3,14 @@
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from 'yup';
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 function AddDeviceForm({visible, setVisible}) {
     const [user, setUser] = useState('');
+    const router = useRouter();
 
     useEffect(() => {
         const url = 'http://localhost:5000/api/dashboard';

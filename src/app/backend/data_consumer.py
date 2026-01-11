@@ -33,11 +33,6 @@ def on_event(partition_context, event):
     seq = event.sequence_number
 
     with app.app_context():
-        offset = EventOffset.query.first()
-        last_seq = offset.sequence_number if offset else -1
-        if seq <= last_seq:
-            partition_context.update_checkpoint(event)
-            return
         try:
             model = Telemetry()
             sensor_id = payload['sensor']
@@ -49,11 +44,6 @@ def on_event(partition_context, event):
             model.value = value
             model.timestamp = timestamp
             db.session.add(model)
-            print(payload)
-            if not offset:
-                offset = EventOffset()
-                db.session.add(offset)
-            offset.sequence_number = seq
             db.session.commit()
         except Exception as e:
             db.session.rollback()
@@ -72,5 +62,5 @@ client = EventHubConsumerClient.from_connection_string(
 with client:
     client.receive(
         on_event=on_event,
-        starting_position='-1',
+        starting_position='@latest',
     )

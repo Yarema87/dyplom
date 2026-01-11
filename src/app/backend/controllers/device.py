@@ -1,6 +1,7 @@
 from flask import Blueprint, make_response, jsonify, request, g
 from models.device import Device
-from datetime import datetime, timedelta, timezone
+from models.user import User
+from datetime import datetime, timedelta
 from extensions import db, fernet
 from azure.iot.hub import IoTHubRegistryManager
 import os
@@ -21,7 +22,16 @@ def device_status(last_seen):
 
 @mod_device.route('/device/user/<int:user_id>', methods=['GET'])
 def get_user_devices(user_id):
-    devices = Device.query.filter_by(user_id=user_id).all()
+    user = User.query.filter_by(id=user_id).first()
+    if user.access == 'admin':
+        operators = User.query.filter_by(organization=user.organization).all()
+        devices = []
+        for operator in operators:
+            operator_devices = Device.query.filter_by(user_id=operator.id).all()
+            for device in operator_devices:
+                devices.append(device)
+    else:
+        devices = Device.query.filter_by(user_id=user_id).all()
     if not devices:
         response = make_response(jsonify({'success': False, 'message': 'User does not have any devices now'}))
         return response, 404
@@ -49,9 +59,7 @@ def get_user_devices(user_id):
 def add_device():
     data = request.get_json()
 
-    utc_plus_3 = timezone(timedelta(hours=3))
-    time = datetime.now(utc_plus_3).replace(microsecond=0)
-    formatted_time = time.strftime('%d.%m.%Y %H:%M')
+    formatted_time = datetime.utcnow()
     
     name = data.get('name')
     description = data.get('description')

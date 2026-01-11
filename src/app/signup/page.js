@@ -20,7 +20,7 @@ function SignUp(){
             });
             if(response.data.success) {
                 toast.success("You have successfully registered");
-                //router.push('/');
+                router.push('/');
             }
         }
         catch(error) {
