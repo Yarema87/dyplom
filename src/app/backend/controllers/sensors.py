@@ -61,7 +61,46 @@ def get_sensor(sensor_id):
         'unit': sensor.unit,
         'data_type': sensor.data_type,
         'min_value': sensor.min_value,
-        'max_value': sensor.max_value
+        'max_value': sensor.max_value,
+        'device_id': sensor.device_id
     }
     response = make_response(jsonify({'success': True, 'sensor': sensor_data}))
     return response, 200
+
+@mod_sensor.route('sensors/edit/<int:sensor_id>', methods=['PATCH'])
+def edit_sensor(sensor_id):
+    sensor = Sensor.query.filter_by(id=sensor_id).first()
+    if not sensor:
+        response = make_response(jsonify({'success': False, 'message': 'Sensor not found'}))
+        return response, 404
+    try:
+        data = request.get_json()
+        sensor.name = data.get('name')
+        sensor.unit = data.get('unit')
+        sensor.data_type = data.get('data_type')
+        sensor.max_value = data.get('max_value')
+        sensor.min_value = data.get('min_value')
+        sensor.device_id = data.get('device_id')
+        db.session.commit()
+        response = make_response(jsonify({'success': True}))
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({'success': False, 'error': e}))
+        return response, 500
+    
+@mod_sensor.route('/sensors/remove/<int:sensor_id>', methods=['DELETE'])
+def delete_sensor(sensor_id):
+    sensor = Sensor.query.filter_by(id=sensor_id).first()
+    if not sensor:
+        response = make_response(jsonify({'success': False, 'message': 'Sensor not found'}))
+        return response, 404
+    try:
+        db.session.delete(sensor)
+        db.session.commit()
+        response = make_response(jsonify({'success': True}))
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({'success': False, 'error': e}))
+        return response, 500

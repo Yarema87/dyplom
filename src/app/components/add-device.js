@@ -60,48 +60,50 @@ function AddDeviceForm({visible, setVisible}) {
     })
 
     return(
-        <div className={`add-device-form ${visible ? '' : 'invisible'}`}>
-            <Formik
-            initialValues={{
-                name: '',
-                description: '',
-                type: '',
-                latitude: '',
-                longitude: '',
-                connection: ''
-            }}
-            validationSchema={validationSchema}
-            onSubmit={addDevice}>
-                <Form>
-                    <div>
-                        <Field placeholder='Device name' name='name' id='name' type='text' />
-                        <ErrorMessage name='name' component='div' className="error_message" />
-                    </div>
-                    <div>
-                        <Field placeholder='Description' name='description' id='description' as='textarea' />
-                    </div>
-                    <div>
-                        <Field placeholder='Type' name='type' id='type' type='text' />
-                        <ErrorMessage name='type' component='div' className="error_message" />
-                    </div>
-                    <div>
-                        <label>Latitude</label>
-                        <Field placeholder='24.1787' name='latitude' id='latitude' type='text' />
-                        <ErrorMessage name='latitude' component='div' className="error_message" />
-                    </div>
-                    <div>
-                        <label>Longitude</label>
-                        <Field placeholder='24.1787' name='longitude' id='longitude' type='text' />
-                        <ErrorMessage name='longitude' component='div' className="error_message" />
-                    </div>
-                    <div>
-                        <label>Device Id</label>
-                        <Field placeholder='My-device' name='connection' id='connection' type='text' />
-                        <ErrorMessage name='connection' component='div' className="error_message" />
-                    </div>
-                    <button type='submit'>Add</button>
-                </Form>
-            </Formik>
+        <div className={`add-device-form ${visible ? '' : 'invisible'}`} onClick={() => setVisible(false)}>
+            <div onClick={(e) => e.stopPropagation()}>
+                <Formik
+                initialValues={{
+                    name: '',
+                    description: '',
+                    type: '',
+                    latitude: '',
+                    longitude: '',
+                    connection: ''
+                }}
+                validationSchema={validationSchema}
+                onSubmit={addDevice}>
+                    <Form>
+                        <div>
+                            <Field placeholder='Device name' name='name' id='name' type='text' />
+                            <ErrorMessage name='name' component='div' className="error_message" />
+                        </div>
+                        <div>
+                            <Field placeholder='Description' name='description' id='description' as='textarea' />
+                        </div>
+                        <div>
+                            <Field placeholder='Type' name='type' id='type' type='text' />
+                            <ErrorMessage name='type' component='div' className="error_message" />
+                        </div>
+                        <div>
+                            <label>Latitude</label>
+                            <Field placeholder='24.1787' name='latitude' id='latitude' type='text' />
+                            <ErrorMessage name='latitude' component='div' className="error_message" />
+                        </div>
+                        <div>
+                            <label>Longitude</label>
+                            <Field placeholder='24.1787' name='longitude' id='longitude' type='text' />
+                            <ErrorMessage name='longitude' component='div' className="error_message" />
+                        </div>
+                        <div>
+                            <label>Device Id</label>
+                            <Field placeholder='My-device' name='connection' id='connection' type='text' />
+                            <ErrorMessage name='connection' component='div' className="error_message" />
+                        </div>
+                        <button type='submit'>Add</button>
+                    </Form>
+                </Formik>
+            </div>
         </div>
     )
 }

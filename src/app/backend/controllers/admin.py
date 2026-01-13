@@ -4,6 +4,7 @@ from models.user import User
 from models.device import Device
 from models.sensors import Sensor
 from controllers.device import device_status
+from extensions import db
 
 mod_admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -70,3 +71,35 @@ def get_admin_sensors():
     } for sensor in sensors]
     response = make_response(jsonify({'success': True, 'sensors': sensor_data}))
     return response, 200
+
+@mod_admin.route('/admin/approve/<int:user_id>', methods=['PATCH'])
+def approve_user(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        response = make_response(jsonify({'success': False, 'error': 'User not found'}))
+        return response, 404
+    try:
+        user.approved = True
+        db.session.commit()
+        response = make_response(jsonify({'success': True}))
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({'success': False, 'error': e}))
+        return response, 500
+    
+@mod_admin.route('/admin/dismiss/<int:user_id>', methods=['PATCH'])
+def dismiss_user(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        response = make_response(jsonify({'success': False, 'error': 'User not found'}))
+        return response, 404
+    try:
+        user.approved = False
+        db.session.commit()
+        response = make_response(jsonify({'success': True}))
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({'success': False, 'error': e}))
+        return response, 500
