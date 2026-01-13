@@ -117,7 +117,7 @@ def get_device(device_id):
             'user_id': device.user_id,
             'status': device_status(device.last_seen_at),
             'created_at': device.created_at,
-            'last_seen_at': device.last_seen_at
+            'last_seen_at': device.last_seen_at,
         }
     response = make_response(jsonify({'success': True, 'device': device_data}))
     return response, 200
@@ -137,3 +137,25 @@ def delete_device(device_id):
         db.session.rollback()
         response = make_response(jsonify({'success': False, 'error': e}))
         return response, 400
+    
+@mod_device.route('device/edit/<int:device_id>', methods=['PATCH'])
+def edit_device(device_id):
+    device = Device.query.filter_by(id=device_id).first()
+    if not device:
+        response = make_response(jsonify({'success': False, 'error': 'device not found'}))
+        return response, 404
+    try:
+        data = request.get_json()
+        device.name = data.get('name')
+        device.description = data.get('description')
+        device.type = data.get('type')
+        device.latitude = data.get('latitude')
+        device.longitude = data.get('longitude')
+        device.user_id = data.get('user')
+        db.session.commit()
+        response = make_response(jsonify({'success': True}))
+        return response, 200
+    except Exception as e:
+        db.session.rollback()
+        response = make_response(jsonify({'success': False, 'error': e}))
+        return response, 500

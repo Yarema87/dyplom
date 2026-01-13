@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Link from "next/link";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import EditDeviceForm from "../components/edit-device";
+import EditSensorForm from "../components/edit-sensor";
 
 function AdminPage(){
     const [activeTab, setActiveTab] = useState('operators');
@@ -12,6 +16,10 @@ function AdminPage(){
     const [devices, setDevices] = useState([]);
     const [sensors, setSensors] = useState([]);
     const [alerts, setAlerts] = useState([]);
+    const [editDevice, setEditDevice] = useState(false);
+    const [deviceToEdit, setDeviceToEdit] = useState('');
+    const [editSensor, setEditSensor] = useState(false);
+    const [sensorToEdit, setSensorToEdit] = useState('');
     const router = useRouter();
 
     useEffect(() => {
@@ -54,6 +62,72 @@ function AdminPage(){
             console.error('Error on fetching sensors:', error);
         })
     }, [])
+
+    const approveUser = (user_id) => {
+        const url = (`http://localhost:5000/api/admin/approve/${user_id}`);
+        axios.patch(url)
+        .then(response => {
+            if(response.data.success){
+                toast.success('User approved successfully');
+            }
+        })
+        .catch(error => {
+            console.error('Error on approving user:', error);
+            toast.error('Something went wrong');
+        })
+    }
+
+    const dismissUser = (user_id) => {
+        const url = (`http://localhost:5000/api/admin/dismiss/${user_id}`);
+        axios.patch(url)
+        .then(response => {
+            if(response.data.success){
+                toast.success('User dismissed successfully');
+            }
+        })
+        .catch(error => {
+            console.error('Error on dismissing user:', error);
+            toast.error('Something went wrong');
+        })
+    }
+
+    const removeDevice = (device_id) => {
+        const url = (`http://localhost:5000/api/device/remove/${device_id}`);
+        axios.delete(url, {
+        headers: {
+                'Content-Type': 'application/json'
+            },
+            withCredentials: true
+        })
+        .then(response => {
+        if(response.data.success){
+            toast.success('Device has been deleted');
+        }
+        })
+        .catch(error => {
+        toast.error('Something went wrong');
+        console.error('Error on deleting device:', error);
+        })
+    }
+
+    const removeSensor = (sensor_id) => {
+        const url = (`http://localhost:5000/api/sensors/remove/${sensor_id}`);
+        axios.delete(url, {
+        headers: {
+                'Content-Type': 'application/json'
+            },
+            withCredentials: true
+        })
+        .then(response => {
+            if(response.data.success){
+                toast.success('Sensor has been deleted');
+            }
+        })
+        .catch(error => {
+            toast.error('Something went wrong');
+            console.error('Error on deleting sensor:', error);
+        })
+    }
 
     return(
         <div className="admin-page">
@@ -100,7 +174,13 @@ function AdminPage(){
                                 <td>{operator?.name}</td>
                                 <td>{operator?.email}</td>
                                 <td>{operator.status ? 'Approved' : 'Not approved'}</td>
-                                <td><button className="approve">{operator.status ? 'Dismiss' : 'Approve'}</button></td>
+                                <td>
+                                    <button 
+                                    className="approve"
+                                    onClick={() => !operator.status ? approveUser(operator.id) : dismissUser(operator.id)}>
+                                        {operator.status ? 'Dismiss' : 'Approve'}
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -130,12 +210,23 @@ function AdminPage(){
                                 <td>{device?.status}</td>
                                 <td>{device?.last_seen_at}</td>
                                 <td>{device?.user_id}</td>
-                                <td><button className="edit">Edit</button></td>
-                                <td><button className="delete">Delete</button></td>
+                                <td>
+                                    <button 
+                                    className="edit"
+                                    onClick={() => {
+                                        setEditDevice(true);
+                                        setDeviceToEdit(device.id);
+                                    }}
+                                    >
+                                        Edit
+                                    </button>
+                                </td>
+                                <td><button className="delete" onClick={() => removeDevice(device.id)}>Delete</button></td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                <EditDeviceForm visible={editDevice} setVisible={setEditDevice} device={deviceToEdit} operators={operators}/>
             </section>
             <section className={`admin-section ${activeTab === 'sensors' ? '' : 'invisible'}`}>
                 <h2>Sensors</h2>
@@ -159,12 +250,30 @@ function AdminPage(){
                                 <td>{sensor?.unit}</td>
                                 <td>{sensor.min_value} - {sensor.max_value}</td>
                                 <td>{sensor.device_id}</td>
-                                <td><button className="edit">Edit</button></td>
-                                <td><button className="delete">Delete</button></td>
+                                <td>
+                                    <button 
+                                    className="edit"
+                                    onClick={() => {
+                                        setEditSensor(true);
+                                        setSensorToEdit(sensor.id);
+                                    }}
+                                    >
+                                        Edit
+                                    </button>
+                                </td>
+                                <td>
+                                    <button 
+                                    className="delete"
+                                    onClick={() => removeSensor(sensor.id)}
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                <EditSensorForm visible={editSensor} setVisible={setEditSensor} sensorId={sensorToEdit} devices={devices} />
             </section>
         </div>
     )
