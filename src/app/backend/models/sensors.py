@@ -12,3 +12,5 @@ class Sensor(db.Model):
 
     device = db.relationship('Device', back_populates='sensors')
     telemetry = db.relationship('Telemetry', back_populates='sensor')
+    rule = db.relationship('AlertRule', back_populates='sensor')
+    alert = db.relationship('Alert', back_populates='sensor')

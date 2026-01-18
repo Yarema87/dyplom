@@ -24,12 +24,10 @@ def get_last_value(sensor_id):
     return None
 
 def generate_payload(device):
-    print('Simulation started')
     payload = {
         'device_id' : device['device_id']
     }
     client = IoTHubDeviceClient.create_from_connection_string(device['connection_string'])
-    print('Client connected')
     sensor_state = {}
     for sensor in device['sensors']:
         last_value = get_last_value(sensor['id'])
@@ -39,7 +37,6 @@ def generate_payload(device):
             else random.uniform(sensor['min_value'], sensor['max_value'])
         )
     try:
-        print('Generating data')
         while True:
             for sensor in device['sensors']:
                 payload['sensor'] = sensor['id']

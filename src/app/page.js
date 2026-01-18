@@ -17,6 +17,7 @@ export default function Home() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const telemetry_sensors = searchParams.get('sensors')?.split(',').filter(Boolean).map(Number) || [];
+  const [alerts, setAlerts] = useState([]);
 
   useEffect(() => {
     const url = 'http://localhost:5000/api/dashboard';
@@ -65,6 +66,17 @@ export default function Home() {
             }
         }
     }, [user])
+
+    useEffect(() => {
+      const url = 'http://localhost:5000/api/alert/user';
+      axios.get(url, {withCredentials: true})
+      .then(response => {
+        setAlerts(response.data.alerts);
+      })
+      .catch(error => {
+        console.error('Error on fetching alerts:', error);
+      })
+    }, [])
 
   const getDeviceSensors = (device_id) => {
     const url = (`http://localhost:5000/api/sensors/device/${device_id}`);
@@ -144,6 +156,34 @@ export default function Home() {
           ))}
         </div>
       )}
+      <div className="alerts-section">
+        <h2>Alerts</h2>
+        {alerts.length == 0 && (
+          <h4 className="alerts-empty">
+            There are no alerts. All your devices are ok
+          </h4>
+        )}
+        {alerts.length > 0 && (
+          <div className="alerts-list">
+            {alerts.map(alert => (
+              <div key={alert.id} className="alert-card">
+                <div className="alert-header">
+                  <span className="alert-title">
+                    Device №{alert.device_id} · Sensor №{alert.sensor_id}
+                  </span>
+                  <span className="alert-time">{alert.triggered_at}</span>
+                </div>
+                <p className="alert-message">
+                  {alert.message} <strong>({alert.value})</strong>
+                </p>
+                <button className="alert-resolve-btn">
+                  Mark as resolved
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="telemetry-section">
         <button 
         onClick={() => setVisibleList(!visibleList)}
