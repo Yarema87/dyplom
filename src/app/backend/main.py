@@ -26,6 +26,8 @@ from controllers.simulator import mod_simulator
 from controllers.telemetry import mod_telemetry
 from controllers.event_offset import mod_offset
 from controllers.admin import mod_admin
+from controllers.alert_rule import mod_rule
+from controllers.alert import mod_alert
 
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
@@ -48,6 +50,8 @@ app.register_blueprint(mod_simulator, url_prefix='/api')
 app.register_blueprint(mod_telemetry, url_prefix='/api')
 app.register_blueprint(mod_offset, url_prefix='/api')
 app.register_blueprint(mod_admin, url_prefix='/api')
+app.register_blueprint(mod_rule, url_prefix='/api')
+app.register_blueprint(mod_alert, url_prefix='/api')
 
 app.before_request(load_user)
 

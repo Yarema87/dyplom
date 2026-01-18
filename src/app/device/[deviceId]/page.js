@@ -12,6 +12,7 @@ function DevicePage({params}){
     const [sensors, setSensors] = useState([]);
     const [visibleForm, setVisibleForm] = useState(false);
     const [visibleList, setVisibleList] = useState(false);
+    const [alerts, setAlerts] = useState([]);
     const searchParams = useSearchParams();
     const router = useRouter();
     const telemetry_sensors = searchParams.get('sensors')?.split(',').filter(Boolean).map(Number) || [];
@@ -72,6 +73,18 @@ function DevicePage({params}){
         }
     }, [device.id])
 
+    useEffect(() => {
+        if (!device) return;
+        const url = (`http://localhost:5000/api/alert/device/${device.id}`);
+        axios.get(url)
+        .then(response => {
+            setAlerts(response.data.alerts);
+        })
+        .catch(error => {
+            console.error('Error on fetching alerts:', error);
+        })
+    }, [device])
+
     return(
         <div className="device-page">
             <div className="device-page-card">
@@ -122,6 +135,34 @@ function DevicePage({params}){
                         </p>
                     )}
                     <AddSensorForm visible={visibleForm} setVisible={setVisibleForm} deviceId={device.id} />
+                </div>
+                <div className="alerts-section">
+                    <h2>Alerts</h2>
+                    {alerts.length == 0 && (
+                    <h4 className="alerts-empty">
+                        There are no alerts. All your devices are ok
+                    </h4>
+                    )}
+                    {alerts.length > 0 && (
+                    <div className="alerts-list">
+                        {alerts.map(alert => (
+                        <div key={alert.id} className="alert-card">
+                            <div className="alert-header">
+                            <span className="alert-title">
+                                Sensor №{alert.sensor_id}
+                            </span>
+                            <span className="alert-time">{alert.triggered_at}</span>
+                            </div>
+                            <p className="alert-message">
+                            {alert.message} <strong>({alert.value})</strong>
+                            </p>
+                            <button className="alert-resolve-btn">
+                            Mark as resolved
+                            </button>
+                        </div>
+                        ))}
+                    </div>
+                    )}
                 </div>
                 <div className="telemetry-section">
                     <button 

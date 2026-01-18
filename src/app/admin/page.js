@@ -8,6 +8,8 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import EditDeviceForm from "../components/edit-device";
 import EditSensorForm from "../components/edit-sensor";
+import EditRuleForm from "../components/edit-rule";
+import AddRuleForm from "../components/add-rule";
 
 function AdminPage(){
     const [activeTab, setActiveTab] = useState('operators');
@@ -20,6 +22,9 @@ function AdminPage(){
     const [deviceToEdit, setDeviceToEdit] = useState('');
     const [editSensor, setEditSensor] = useState(false);
     const [sensorToEdit, setSensorToEdit] = useState('');
+    const [addRule, setAddRule] = useState(false);
+    const [editRule, setEditRule] = useState(false);
+    const [ruleToEdit, setRuleToEdit] = useState('');
     const router = useRouter();
 
     useEffect(() => {
@@ -60,6 +65,15 @@ function AdminPage(){
         })
         .catch(error => {
             console.error('Error on fetching sensors:', error);
+        })
+
+        const rules_url = 'http://localhost:5000/api/rule/organization';
+        axios.get(rules_url, {withCredentials: true})
+        .then(response => {
+            setAlerts(response.data.rules);
+        })
+        .catch(error => {
+            console.error('Error on fetching alert rules:', error)
         })
     }, [])
 
@@ -126,6 +140,25 @@ function AdminPage(){
         .catch(error => {
             toast.error('Something went wrong');
             console.error('Error on deleting sensor:', error);
+        })
+    }
+
+    const removeRule = (rule_id) => {
+        const url = (`http://localhost:5000/api/rule/remove/${rule_id}`);
+        axios.delete(url, {
+        headers: {
+                'Content-Type': 'application/json'
+            },
+            withCredentials: true
+        })
+        .then(response => {
+            if(response.data.success){
+                toast.success('Alert rule has been deleted');
+            }
+        })
+        .catch(error => {
+            toast.error('Something went wrong');
+            console.error('Error on deleting alert rule:', error);
         })
     }
 
@@ -274,6 +307,62 @@ function AdminPage(){
                     </tbody>
                 </table>
                 <EditSensorForm visible={editSensor} setVisible={setEditSensor} sensorId={sensorToEdit} devices={devices} />
+            </section>
+            <section className={`admin-section ${activeTab === 'alerts' ? '' : 'invisible'}`}>
+                <h2>Alert rules</h2>
+                <table className="admin-table">
+                    <thead>
+                    <tr>
+                        <th>Sensor</th>
+                        <th>Min value</th>
+                        <th>Max value</th>
+                        <th>Message</th>
+                        <th>Status</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {alerts.map(rule => (
+                            <tr key={rule.id}>
+                                <td>
+                                    {rule?.sensor_id ? rule.sensor_id : rule.sensor_name}
+                                </td>
+                                <td>
+                                    {rule?.min_value ? rule.min_value : 'Min value is unset for this rule'}
+                                </td>
+                                <td>
+                                    {rule?.max_value ? rule.max_value : 'Max value is unset for this rule'}
+                                </td>
+                                <td>{rule?.message}</td>
+                                <td>{rule?.enabled ? 'Enabled' : 'Disabled'}</td>
+                                <td>
+                                    <button
+                                    className="edit"
+                                    onClick={() => {
+                                        setEditRule(true);
+                                        setRuleToEdit(rule.id);
+                                    }}>
+                                        Edit
+                                    </button>
+                                </td>
+                                <td>
+                                    <button
+                                    className="delete"
+                                    onClick={() => removeRule(rule.id)}>
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                <button className="add-device-btn" onClick={() => setAddRule(true)}>
+                    <span>+</span>
+                    Add alert rule
+                </button>
+                <AddRuleForm visible={addRule} setVisible={setAddRule} sensors={sensors}/>
+                <EditRuleForm visible={editRule} setVisible={setEditRule} rule_id={ruleToEdit} sensors={sensors}/>
             </section>
         </div>
     )
