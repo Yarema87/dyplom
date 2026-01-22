@@ -9,6 +9,7 @@ class Alert(db.Model):
     value = db.Column(db.Float)
     triggered_at = db.Column(db.DateTime)
     resolved = db.Column(db.Boolean, default=False)
+    resolved_at = db.Column(db.DateTime, nullable=True)
 
     rule = db.relationship('AlertRule', back_populates='alert')
     sensor = db.relationship('Sensor', back_populates='alert')

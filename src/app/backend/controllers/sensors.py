@@ -1,6 +1,7 @@
 from flask import Blueprint, make_response, jsonify, request
 from models.sensors import Sensor
-from extensions import db
+from extensions import db, redis_client
+from redis_cache import cache_sensor, delete_sensor_cache
 
 mod_sensor = Blueprint('sensors', __name__, url_prefix='/sensors')
 
@@ -42,10 +43,11 @@ def add_sensor():
     try:
         db.session.add(model)
         db.session.commit()
+        cache_sensor(model)
         response = make_response(jsonify({'success': True}))
         return response, 201
     except Exception as e:
-        db.session.rollback
+        db.session.rollback()
         response = make_response(jsonify({'success': False, 'error': e}))
         return response, 400
     
@@ -73,6 +75,7 @@ def edit_sensor(sensor_id):
     if not sensor:
         response = make_response(jsonify({'success': False, 'message': 'Sensor not found'}))
         return response, 404
+    old_device_id = sensor.device_id
     try:
         data = request.get_json()
         sensor.name = data.get('name')
@@ -82,6 +85,12 @@ def edit_sensor(sensor_id):
         sensor.min_value = data.get('min_value')
         sensor.device_id = data.get('device_id')
         db.session.commit()
+        if sensor.device_id != old_device_id:
+            redis_client.srem(
+                f"device:{old_device_id}:sensors",
+                sensor.id
+            )
+        cache_sensor(sensor)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:
@@ -98,6 +107,7 @@ def delete_sensor(sensor_id):
     try:
         db.session.delete(sensor)
         db.session.commit()
+        delete_sensor_cache(sensor_id)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:

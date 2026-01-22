@@ -60,6 +60,12 @@ def get_admin_sensors():
     if not sensors:
         response = make_response(jsonify({'success': False, 'error': 'None sensors found for this organization'}))
         return response, 404
+    sensor_names = set()
+    for sensor in sensors:
+        sensor_names.add(sensor.name)
+    names_list = [{
+        'name': name
+    } for name in sensor_names]
     sensor_data = [{
         'id': sensor.id,
         'name': sensor.name,
@@ -69,7 +75,7 @@ def get_admin_sensors():
         'min_value': sensor.min_value,
         'device_id': sensor.device_id
     } for sensor in sensors]
-    response = make_response(jsonify({'success': True, 'sensors': sensor_data}))
+    response = make_response(jsonify({'success': True, 'sensors': sensor_data, 'names': names_list}))
     return response, 200
 
 @mod_admin.route('/admin/approve/<int:user_id>', methods=['PATCH'])

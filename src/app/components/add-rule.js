@@ -8,7 +8,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-function AddRuleForm({visible, setVisible, sensors}) {
+function AddRuleForm({visible, setVisible, sensors, names}) {
     const [user, setUser] = useState('');
     const router = useRouter();
 
@@ -87,7 +87,13 @@ function AddRuleForm({visible, setVisible, sensors}) {
                                 </Field>
                             </div>
                             <div style={{display: `${values.type === 'name' ? 'flex' : 'none'}`}}>
-                                <Field placeholder='Humidity sensor' name='sensor_name' id='sensor_name' />
+                                <Field as='select' name='sensor_name' id='sensor_name'>
+                                    {names.map(name => (
+                                        <option key={name.name} value={name.name}>
+                                            {name.name}
+                                        </option>
+                                    ))}
+                                </Field>
                             </div>
                             <div>
                                 <Field placeholder='Min value' name='min_value' id='min_value' type='text' />

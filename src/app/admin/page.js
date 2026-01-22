@@ -17,6 +17,7 @@ function AdminPage(){
     const [operators, setOperators] = useState([]);
     const [devices, setDevices] = useState([]);
     const [sensors, setSensors] = useState([]);
+    const [sensorNames, setSensorNames] = useState([]);
     const [alerts, setAlerts] = useState([]);
     const [editDevice, setEditDevice] = useState(false);
     const [deviceToEdit, setDeviceToEdit] = useState('');
@@ -62,6 +63,7 @@ function AdminPage(){
         axios.get(sensors_url, {withCredentials: true})
         .then(response => {
             setSensors(response.data.sensors);
+            setSensorNames(response.data.names);
         })
         .catch(error => {
             console.error('Error on fetching sensors:', error);
@@ -361,8 +363,8 @@ function AdminPage(){
                     <span>+</span>
                     Add alert rule
                 </button>
-                <AddRuleForm visible={addRule} setVisible={setAddRule} sensors={sensors}/>
-                <EditRuleForm visible={editRule} setVisible={setEditRule} rule_id={ruleToEdit} sensors={sensors}/>
+                <AddRuleForm visible={addRule} setVisible={setAddRule} sensors={sensors} names={sensorNames}/>
+                <EditRuleForm visible={editRule} setVisible={setEditRule} rule_id={ruleToEdit} sensors={sensors} names={sensorNames}/>
             </section>
         </div>
     )

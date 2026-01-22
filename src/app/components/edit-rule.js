@@ -8,7 +8,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-function EditRuleForm({visible, setVisible, rule_id, sensors}) {
+function EditRuleForm({visible, setVisible, rule_id, sensors, names}) {
     const [user, setUser] = useState('');
     const [rule, setRule] = useState('');
     const router = useRouter();
@@ -73,7 +73,7 @@ function EditRuleForm({visible, setVisible, rule_id, sensors}) {
                 {rule && (
                     <Formik
                     initialValues={{
-                        type: rule?.type,
+                        type: rule?.sensor_id ? 'id' : 'name',
                         sensor_id: rule?.sensor_id || '',
                         sensor_name: rule?.sensor_name || '',
                         min_value: rule?.min_value || '',
@@ -103,7 +103,13 @@ function EditRuleForm({visible, setVisible, rule_id, sensors}) {
                                     </Field>
                                 </div>
                                 <div style={{display: `${values.type === 'name' ? 'flex' : 'none'}`}}>
-                                    <Field placeholder='Humidity sensor' name='sensor_name' id='sensor_name' />
+                                    <Field as='select' name='sensor_name' id='sensor_name' >
+                                        {names.map(name => (
+                                            <option key={name.name} value={name.name}>
+                                                {name.name}
+                                            </option>
+                                        ))}
+                                    </Field>
                                 </div>
                                 <div>
                                     <Field placeholder='Min value' name='min_value' id='min_value' type='text' />

@@ -85,6 +85,20 @@ function DevicePage({params}){
         })
     }, [device])
 
+    const resolveAlert = (alert_id) => {
+        const url = (`http://localhost:5000/api/alert/resolve/${alert_id}`);
+        axios.patch(url, {}, {withCredentials: true})
+        .then(response => {
+        if(response.data.success){
+            toast.success('Alert was resolved');
+        }
+        })
+        .catch(error => {
+        toast.error('Something went wrong');
+        console.error('Error on resolving alert:', error);
+        })
+    }
+
     return(
         <div className="device-page">
             <div className="device-page-card">
@@ -156,7 +170,7 @@ function DevicePage({params}){
                             <p className="alert-message">
                             {alert.message} <strong>({alert.value})</strong>
                             </p>
-                            <button className="alert-resolve-btn">
+                            <button className="alert-resolve-btn" onClick={() => resolveAlert(alert.id)}>
                             Mark as resolved
                             </button>
                         </div>

@@ -1,8 +1,9 @@
 from flask import Blueprint, request, make_response, jsonify, g
 from models.alert_rule import AlertRule
 from models.user import User
-from extensions import db
+from extensions import db, redis_client
 from user_check import admin_required, login_required
+from redis_cache import cache_rule, delete_rule_cache
 
 mod_rule = Blueprint('rule', __name__, url_prefix='/rule')
 
@@ -24,6 +25,7 @@ def add_alert_rule():
     try:
         db.session.add(model)
         db.session.commit()
+        cache_rule(model)
         response = make_response(jsonify({'success': True}))
         return response, 201
     except Exception as e:
@@ -62,6 +64,7 @@ def delete_rule(rule_id):
     try:
         db.session.delete(rule)
         db.session.commit()
+        delete_rule_cache(rule_id)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:
@@ -76,6 +79,7 @@ def edit_rule(rule_id):
         response = make_response(jsonify({'success': False, 'error': 'Rule not found'}))
         return response, 404
     try:
+        old_sensor_id = rule.sensor_id
         data = request.get_json()
         if data.get('type') == 'id':
             rule.sensor_id = data.get('sensor_id')
@@ -88,6 +92,12 @@ def edit_rule(rule_id):
         rule.message = data.get('message')
         rule.enabled = data.get('enabled')
         db.session.commit()
+        if rule.sensor_id != old_sensor_id:
+            redis_client.srem(
+                f'sensor:{old_sensor_id}:rules',
+                rule.id
+            )
+        cache_rule(rule)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:
