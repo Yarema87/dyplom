@@ -6,6 +6,7 @@ from extensions import db, fernet
 from azure.iot.hub import IoTHubRegistryManager
 import os
 from user_check import login_required
+from redis_cache import cache_device, delete_device_cache
 
 mod_device = Blueprint('device', __name__, url_prefix='/device')
 
@@ -94,6 +95,7 @@ def add_device():
     try:
         db.session.add(model)
         db.session.commit()
+        cache_device(model)
         response = make_response(jsonify({'success': True}))
         return response, 201
     except Exception as e:
@@ -131,6 +133,7 @@ def delete_device(device_id):
     try:
         db.session.delete(device)
         db.session.commit()
+        delete_device_cache(device_id)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:
@@ -153,6 +156,7 @@ def edit_device(device_id):
         device.longitude = data.get('longitude')
         device.user_id = data.get('user')
         db.session.commit()
+        cache_device(device)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:

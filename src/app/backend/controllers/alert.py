@@ -4,7 +4,9 @@ from models.device import Device
 from models.alert_rule import AlertRule
 from flask import Blueprint, g, make_response, jsonify
 from user_check import login_required
-from extensions import db
+from extensions import db, mail
+from flask_mail import Message
+from datetime import datetime
 
 mod_alert = Blueprint('alert', __name__, url_prefix='/alert')
 
@@ -52,14 +54,29 @@ def get_user_alerts():
     return response, 200
 
 @mod_alert.route('/alert/resolve/<int:alert_id>', methods=['PATCH'])
+@login_required
 def resolve_alert(alert_id):
+    user_id = g.user.get('user_id')
+    user = User.query.filter_by(id=user_id).first()
+    admin = User.query.filter_by(organization=user.organization, access='admin').first()
     alert = Alert.query.filter_by(id=alert_id).first()
     if not alert:
         response = make_response(jsonify({'success': False, 'error': 'alert not found'}))
         return response, 404
     try:
         alert.resolved = True
+        alert.resolved_at = datetime.utcnow()
         db.session.commit()
+        msg = Message(
+            subject=f'Alert №{alert.id}',
+            recipients=[admin.email],
+            body=(
+                f'Alert resolved!\n\n'
+                f'Time: {alert.resolved_at}\n'
+                f'Operator: {user.name}\n\n'
+            )
+        )
+        mail.send(msg)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:
@@ -69,7 +86,7 @@ def resolve_alert(alert_id):
     
 @mod_alert.route('/alert/device/<int:device_id>', methods=['GET'])
 def get_device_alerts(device_id):
-    alerts = db.session.query(Alert, AlertRule, Device).join(Device, Alert.device_id == Device.id).join(AlertRule, Alert.rule_id == AlertRule.id).filter(Device.id == device_id).all()
+    alerts = db.session.query(Alert, AlertRule, Device).join(Device, Alert.device_id == Device.id).join(AlertRule, Alert.rule_id == AlertRule.id).filter(Device.id == device_id, Alert.resolved == False).all()
     if not alerts:
         response = make_response(jsonify({'success': False, 'error': 'None alerts found for this device'}))
         return response, 404

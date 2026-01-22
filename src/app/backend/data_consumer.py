@@ -1,5 +1,5 @@
 from azure.eventhub import EventHubConsumerClient
-from extensions import db
+from extensions import db, mail, redis_client
 from models.user import User
 from models.device import Device
 from models.sensors import Sensor
@@ -11,6 +11,8 @@ import os
 from flask import Flask
 from sqlalchemy import or_
 from datetime import datetime
+from flask_mail import Message
+import time
 
 load_dotenv()
 
@@ -23,17 +25,25 @@ def create_app():
 
     app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URI")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+    app.config['MAIL_PORT'] = os.getenv('MAIL_PORT')
+    app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 
     db.init_app(app)
+    mail.init_app(app)
 
     return app
 
 app = create_app()
 
 def check_rule(rule, value):
-    if rule.min_value is not None and value < rule.min_value:
+    if rule.get('min_value') is not None and value < float(rule.get('min_value')):
         return True
-    if rule.max_value is not None and value > rule.max_value:
+    if rule.get('max_value') is not None and value > float(rule.get('max_value')):
         return True
     return False
 
@@ -49,50 +59,85 @@ def alert_cooldown(rule_id, sensor_id):
         return delta >= COOLDOWN_SECONDS
     return True
 
+def send_alert(data):
+    try:
+        msg = Message(
+            subject=f'Alert №{data["alert_id"]}',
+            recipients=[data['email']],
+            body=(
+                f'Alert triggered!\n\n'
+                f'Device: #{data["device_id"]}\n'
+                f'Sensor: #{data["sensor_id"]}\n'
+                f'Time: {data["triggered_at"]}\n'
+                f'Value: {data["value"]}\n\n'
+                f'Message: {data["message"]}'
+            )
+        )
+        mail.send(msg)
+        print('Mail was sent')
+    except Exception as e:
+        print('Error on sending email:', e)
+
 def on_event(partition_context, event):
     payload = event.body_as_json()
-
+    alerts_to_notify = []
     with app.app_context():
         try:
             model = Telemetry()
             sensor_id = payload['sensor']
+            device_id = payload['device_id']
             timestamp = payload['timestamp']
-            sensor = Sensor.query.filter_by(id=sensor_id).first()
-            sensor_name = sensor.name
-            device = Device.query.filter_by(id=payload['device_id']).first()
-            device.last_seen_at = datetime.fromisoformat(timestamp)
-            user = User.query.filter_by(id=device.user_id).first()
-            rules = AlertRule.query.filter(
-                AlertRule.enabled == True,
-                AlertRule.organization == user.organization,
-                or_(
-                    AlertRule.sensor_id == sensor_id,
-                    AlertRule.sensor_name == sensor_name
-                )
-            ).all()
+            sensor = redis_client.hgetall(f'sensor:{sensor_id}')
+            sensor_name = sensor.get('name')
+            device = redis_client.hgetall(f'device:{device_id}')
+            Device.query.filter_by(id=device_id).update({
+                Device.last_seen_at: datetime.fromisoformat(timestamp)
+            })
+            user = User.query.filter_by(id=device.get('owner')).first()
+            admin = User.query.filter_by(organization=user.organization, access='admin').first()
+            rule_ids = set()
+            rule_ids |= redis_client.smembers(f'sensor:{sensor_id}:rules')
+            rule_ids |= redis_client.smembers(f'sensor:{sensor_name}:rules')
+            rule_ids &= redis_client.smembers(f'org:{user.organization}:rules:enabled')
             value = payload['value']
             model.sensor_id = sensor_id
             model.value = value
             model.timestamp = timestamp
             db.session.add(model)
             db.session.flush()
-            for rule in rules:
+            for rule_id in rule_ids:
+                rule = redis_client.hgetall(f'rule:{rule_id}')
                 if check_rule(rule, value):
-                    if alert_cooldown(rule.id, sensor_id):
+                    if alert_cooldown(rule_id, sensor_id):
                         alert = Alert()
-                        alert.rule_id = rule.id
+                        alert.rule_id = rule_id
                         alert.sensor_id = sensor_id
-                        alert.device_id = device.id
+                        alert.device_id = device_id
                         alert.value = value
                         alert.triggered_at = datetime.utcnow()
                         alert.resolved = False
                         db.session.add(alert)
+                        db.session.flush()
+                        alerts_to_notify.append({
+                            'alert_id': alert.id,
+                            'sensor_id': alert.sensor_id,
+                            'device_id': alert.device_id,
+                            'value': alert.value,
+                            'triggered_at': alert.triggered_at,
+                            'email': admin.email,
+                            'message': rule.get('message')
+                        })
             db.session.commit()
+        except KeyboardInterrupt:
+            print('Simulation stopped')
         except Exception as e:
             db.session.rollback()
             print('db error:', e)
         finally:
             db.session.remove()
+    with app.app_context():
+        for alert_data in alerts_to_notify:
+            send_alert(alert_data)
 
     partition_context.update_checkpoint(event)
 

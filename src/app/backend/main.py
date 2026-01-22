@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 import os
 from dotenv import load_dotenv
-from extensions import db
+from extensions import db, mail
 from user_check import load_user
 
 
@@ -37,8 +37,16 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
 }
 app.secret_key = os.getenv('SECRET_KEY')
+app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER')
+app.config['MAIL_PORT'] = os.getenv('MAIL_PORT')
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 
 db.init_app(app)
+mail.init_app(app)
 migrate = Migrate(app, db)
 
 app.register_blueprint(mod_user, url_prefix='/api')
