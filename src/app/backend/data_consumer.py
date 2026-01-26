@@ -1,5 +1,5 @@
 from azure.eventhub import EventHubConsumerClient
-from extensions import db, mail, redis_client
+from extensions import db, mail, redis_client, WINDOW_SIZE
 from models.user import User
 from models.device import Device
 from models.sensors import Sensor
@@ -12,7 +12,8 @@ from flask import Flask
 from sqlalchemy import or_
 from datetime import datetime
 from flask_mail import Message
-import time
+import numpy as np
+from detect_anomaly import detect_anomaly
 
 load_dotenv()
 
@@ -78,6 +79,16 @@ def send_alert(data):
     except Exception as e:
         print('Error on sending email:', e)
 
+def update_window(sensor_id, value):
+    key = f'anomaly:window:{sensor_id}'
+    redis_client.rpush(key, value)
+    redis_client.ltrim(key, -WINDOW_SIZE, -1)
+
+def get_window(sensor_id):
+    key = f'anomaly:window:{sensor_id}'
+    values = redis_client.lrange(key, 0, -1)
+    return np.array(values, dtype=np.float32)
+
 def on_event(partition_context, event):
     payload = event.body_as_json()
     alerts_to_notify = []
@@ -128,6 +139,23 @@ def on_event(partition_context, event):
                             'message': rule.get('message')
                         })
             db.session.commit()
+            update_window(sensor_id, value)
+            window = get_window(sensor_id)
+            if len(window) == WINDOW_SIZE:
+                result = detect_anomaly(sensor_id, window)
+                redis_client.hset(
+                    f'anomaly:result:{sensor_id}',
+                    mapping={
+                        'score': float(result['score']),
+                        'probability': float(result['probability']),
+                        'is_anomaly': int(result['is_anomaly']),
+                        'timestamp': datetime.utcnow().isoformat()
+                    }
+                )
+                print(
+                    f'Is anomally - {result["is_anomaly"]} '
+                    f'(sensor={sensor_id}, prob={result["probability"]:.2f})'
+                )
         except KeyboardInterrupt:
             print('Simulation stopped')
         except Exception as e:

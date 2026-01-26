@@ -18,6 +18,8 @@ export default function Home() {
   const router = useRouter();
   const telemetry_sensors = searchParams.get('sensors')?.split(',').filter(Boolean).map(Number) || [];
   const [alerts, setAlerts] = useState([]);
+  const [tgLink, setTgLink] = useState('');
+  const [tgModal, setTgModal] = useState(false);
 
   useEffect(() => {
     const url = 'http://localhost:5000/api/dashboard';
@@ -136,6 +138,20 @@ export default function Home() {
     })
   }
 
+  const tgSubscribe = () => {
+    const url = 'http://localhost:5000/api/token/add';
+    axios.post(url, {}, {withCredentials: true})
+    .then(response => {
+      if(response.data.success){
+        setTgLink(response.data.link);
+        setTgModal(true);
+      }
+    })
+    .catch(error => {
+      console.error('Error on getting tg link:', error);
+    })
+  }
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -173,6 +189,12 @@ export default function Home() {
       )}
       <div className="alerts-section">
         <h2>Alerts</h2>
+        <button className="telemetry-toggle" onClick={() => tgSubscribe()}>Subscribe to telegram alerts</button>
+        {tgModal && (
+          <div>
+            <a href={tgLink} target="_blank" rel="noopener noreferrer"><button>Open Telegram</button></a>
+          </div>
+        )}
         {alerts.length == 0 && (
           <h4 className="alerts-empty">
             There are no alerts. All your devices are ok

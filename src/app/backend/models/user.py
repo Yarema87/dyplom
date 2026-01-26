@@ -11,3 +11,5 @@ class User(db.Model):
     approved = db.Column(db.Boolean)
 
     device = db.relationship('Device', back_populates='owner')
+    subscription = db.relationship('TgSubscription', back_populates='user') 
+    tg_token = db.relationship('TgToken', back_populates='user')
