@@ -1,11 +1,13 @@
 from azure.eventhub import EventHubConsumerClient
-from extensions import db, mail, redis_client, WINDOW_SIZE
+from extensions import db, mail, redis_client, WINDOW_SIZE, bot
 from models.user import User
 from models.device import Device
 from models.sensors import Sensor
 from models.telemetry import Telemetry
 from models.alert_rule import AlertRule
 from models.alert import Alert
+from models.tg_subscription import TgSubscription
+from models.tg_token import TgToken
 from dotenv import load_dotenv
 import os
 from flask import Flask
@@ -13,7 +15,10 @@ from sqlalchemy import or_
 from datetime import datetime
 from flask_mail import Message
 import numpy as np
+import pandas as pd
 from detect_anomaly import detect_anomaly
+import asyncio
+from deltalake import write_deltalake
 
 load_dotenv()
 
@@ -89,6 +94,58 @@ def get_window(sensor_id):
     values = redis_client.lrange(key, 0, -1)
     return np.array(values, dtype=np.float32)
 
+def bot_alert(data):
+    subscription = TgSubscription.query.filter_by(user_id=data['user_id'], enabled=True).first()
+    if not subscription:
+        return
+    chat_id = subscription.chat_id
+    text = (
+                f'Alert triggered!\n\n'
+                f'Device: #{data["device_id"]}\n'
+                f'Sensor: #{data["sensor_id"]}\n'
+                f'Time: {data["triggered_at"]}\n'
+                f'Value: {data["value"]}\n\n'
+                f'Message: {data["message"]}'
+            )
+    try:
+        asyncio.run(bot.send_message(chat_id=chat_id, text=text))
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        loop.create_task(bot.send_message(chat_id=chat_id, text=text))
+
+def inform_anomaly(user_id, device_id, sensor_id, result):
+    subscription = TgSubscription.query.filter_by(user_id=user_id, enabled=True).first()
+    if not subscription:
+        return
+    chat_id = subscription.chat_id
+    text = (
+        f'Anomal data!\n\n'
+        f'Probability: {result["probability"]}\n'
+        f'Device: #{device_id}\n'
+        f'Sensor: #{sensor_id}\n'
+        f'Time: {datetime.utcnow().isoformat()}\n'
+    )
+    try:
+        asyncio.run(bot.send_message(chat_id=chat_id, text=text))
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        loop.create_task(bot.send_message(chat_id=chat_id, text=text))
+
+def write_raw_to_delta(payload):
+    df = pd.DataFrame([{
+        'timestamp': payload['timestamp'],
+        'sensor_id': payload['sensor'],
+        'device_id': payload['device_id'],
+        'value': payload['value']
+    }])
+    write_deltalake(
+        'delta/telemetry_raw',
+        df,
+        mode='append',
+        partition_by=['sensor_id']
+    )
+
+
 def on_event(partition_context, event):
     payload = event.body_as_json()
     alerts_to_notify = []
@@ -116,6 +173,7 @@ def on_event(partition_context, event):
             model.timestamp = timestamp
             db.session.add(model)
             db.session.flush()
+            write_raw_to_delta(payload)
             for rule_id in rule_ids:
                 rule = redis_client.hgetall(f'rule:{rule_id}')
                 if check_rule(rule, value):
@@ -136,7 +194,8 @@ def on_event(partition_context, event):
                             'value': alert.value,
                             'triggered_at': alert.triggered_at,
                             'email': admin.email,
-                            'message': rule.get('message')
+                            'message': rule.get('message'),
+                            'user_id': user.id
                         })
             db.session.commit()
             update_window(sensor_id, value)
@@ -152,10 +211,8 @@ def on_event(partition_context, event):
                         'timestamp': datetime.utcnow().isoformat()
                     }
                 )
-                print(
-                    f'Is anomally - {result["is_anomaly"]} '
-                    f'(sensor={sensor_id}, prob={result["probability"]:.2f})'
-                )
+                if result['is_anomaly']:
+                    inform_anomaly(user.id, device_id, sensor_id, result)
         except KeyboardInterrupt:
             print('Simulation stopped')
         except Exception as e:
@@ -166,6 +223,7 @@ def on_event(partition_context, event):
     with app.app_context():
         for alert_data in alerts_to_notify:
             send_alert(alert_data)
+            bot_alert(alert_data)
 
     partition_context.update_checkpoint(event)
 

@@ -7,6 +7,7 @@ from keras.models import load_model
 import os
 from dotenv import load_dotenv
 import pandas as pd
+from telegram import Bot
 
 load_dotenv()
 
@@ -35,3 +36,6 @@ thresholds = joblib.load(threshold_path)
 df = pd.read_csv(csv_path)
 
 WINDOW_SIZE = 30
+
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+bot = Bot(token=BOT_TOKEN)
