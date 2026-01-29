@@ -16,10 +16,10 @@ function SignUp(){
                 headers: {
                     'Content-Type': 'application/json'
                 }
-                // withCredentials: true  // Only if you need cookies/sessions
             });
             if(response.data.success) {
                 toast.success("You have successfully registered");
+                toast.info('Wait for your admin to confirm your registration');
                 router.push('/');
             }
         }
