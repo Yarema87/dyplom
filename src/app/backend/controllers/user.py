@@ -1,9 +1,11 @@
-from extensions import db
+from extensions import db, bot
 from flask import Blueprint, request, make_response, jsonify, current_app
 from models.user import User
+from models.tg_subscription import TgSubscription
 import bcrypt
 import datetime
 import jwt
+import asyncio
 
 mod_user = Blueprint('user', __name__, url_prefix='/user')
 
@@ -34,7 +36,7 @@ def register_user():
 
         db.session.add(model)
         db.session.commit()
-
+        registration_notification(model)
         response = make_response(jsonify({'success': True}))
         return response, 201
     except Exception as e:
@@ -55,6 +57,7 @@ def log_in():
                 'user_id': user.id,
                 'email': user.email,
                 'access': user.access,
+                'approved': user.approved,
                 'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
             }
         else:
@@ -91,3 +94,35 @@ def logout():
         expires=0
     )
     return response, 200
+
+def registration_notification(user):
+    admin = User.query.filter_by(organization=user.organization, access='admin').first()
+    if not admin:
+        response = {'success': True, 'error': 'There are no admin of this organization'}
+        user.appreoved = True
+        db.session.commit()
+        return response
+    subscription = TgSubscription.query.filter_by(user_id=admin.id).first()
+    if not subscription:
+        response = {'success': False, 'error': 'Admin will not be notified'}
+        return response
+    chat_id = subscription.chat_id
+    text = (
+        f'New registration!\n\n'
+        f'User - {user.name}\n'
+        f'Email - {user.email}\n\n'
+        f'Approve or dismiss him in app'
+    )
+    try:
+        asyncio.run(bot.send_message(chat_id=chat_id, text=text))
+    except RuntimeError:
+        loop = asyncio.get_event_loop()
+        loop.create_task(bot.send_message(chat_id=chat_id, text=text))
+
+@mod_user.route('/user/google/callback', methods=['GET'])
+def google_callback():
+    pass
+
+@mod_user.route('/user/google/login', methods=['POST'])
+def google_login():
+    pass

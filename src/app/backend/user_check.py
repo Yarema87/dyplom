@@ -18,7 +18,7 @@ def load_user():
 def login_required(fn):
     @wraps(fn)
     def wrapper(*args, **kwargs):
-        if g.user is None:
+        if g.user is None or g.user.get('approved') == False:
             return jsonify({'error': 'Unauthorized'}), 401
         return fn(*args, **kwargs)
     return wrapper

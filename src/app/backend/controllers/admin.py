@@ -4,7 +4,8 @@ from models.user import User
 from models.device import Device
 from models.sensors import Sensor
 from controllers.device import device_status
-from extensions import db
+from extensions import db, mail
+from flask_mail import Message
 
 mod_admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -87,6 +88,15 @@ def approve_user(user_id):
     try:
         user.approved = True
         db.session.commit()
+        msg = Message(
+            subject='My IoT platform registration',
+            recipients=[user.email],
+            body=(
+                f'You have been approved by your admin\n'
+                f'You can log in to your account now'
+            )
+        )
+        mail.send(msg)
         response = make_response(jsonify({'success': True}))
         return response, 200
     except Exception as e:
