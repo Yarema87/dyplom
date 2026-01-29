@@ -4,6 +4,7 @@ anyio==4.12.1
 arro3-core==0.6.5
 astunparse==1.6.3
 async-timeout==5.0.1
+Authlib==1.6.6
 azure-core==1.37.0
 azure-eventhub==5.15.1
 azure-iot-device==2.14.0

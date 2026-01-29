@@ -27,6 +27,12 @@ function LogIn() {
             if(error.response && error.response.status === 401){
                 toast.error('Wrong email or password');
             }
+            else if(error.response && error.response.status === 403){
+                toast.error('Your admin has not approved you yet');
+            }
+            else if(error.response && error.response.status === 404){
+                toast.error('You have not been registered yet');
+            }
             else{
                 toast.error('Some error occured');
                 console.error('Error on loggin in:', error);
@@ -40,6 +46,10 @@ function LogIn() {
         password: Yup.string()
             .required('Please, enter your password')
     });
+
+    const googleLogin = () => {
+        window.location.href = 'http://localhost:5000/api/user/google/login';
+    };
 
     return(
         <div className="auth-page">
@@ -65,8 +75,13 @@ function LogIn() {
                         <Field type='checkbox' name='remember' id='remember' />
                     </div>
                     <button type="submit">Log in</button>
+                    <button className="google-btn" onClick={() => googleLogin()}>
+                        <span className="google-icon" />
+                        <span className="google-text">Continue with Google</span>
+                    </button>
                 </Form>
             </Formik>
+            
         </div>
     )
 }

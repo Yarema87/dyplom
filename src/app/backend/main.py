@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 from extensions import db, mail
 from user_check import load_user
-
+from oauth_config import init_oauth
 
 app = Flask(__name__)
 CORS(app, 
@@ -50,6 +50,7 @@ app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER')
 db.init_app(app)
 mail.init_app(app)
 migrate = Migrate(app, db)
+init_oauth(app)
 
 app.register_blueprint(mod_user, url_prefix='/api')
 app.register_blueprint(mod_dashboard, url_prefix='/api')
