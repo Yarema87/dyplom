@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 from telegram import Bot
+from authlib.integrations.flask_client import OAuth
 
 load_dotenv()
 
@@ -39,3 +40,5 @@ WINDOW_SIZE = 30
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=BOT_TOKEN)
+
+oauth = OAuth()

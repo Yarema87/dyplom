@@ -1,11 +1,12 @@
 from extensions import db, bot
-from flask import Blueprint, request, make_response, jsonify, current_app
+from flask import Blueprint, request, make_response, jsonify, current_app, url_for, redirect
 from models.user import User
 from models.tg_subscription import TgSubscription
 import bcrypt
 import datetime
 import jwt
 import asyncio
+from oauth_config import oauth
 
 mod_user = Blueprint('user', __name__, url_prefix='/user')
 
@@ -51,6 +52,12 @@ def log_in():
     password = data.get('password')
     remember = data.get('remember', False)
     user = User.query.filter_by(email=email).first()
+    if not user:
+        response = make_response(jsonify({'success': False, 'error': 'User not registered'}))
+        return response, 404
+    if not user.approved:
+        response = make_response(jsonify({'success': False, 'error': 'User not approved'}))
+        return response, 403
     if user and bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
         if not remember:
             payload = {
@@ -99,7 +106,7 @@ def registration_notification(user):
     admin = User.query.filter_by(organization=user.organization, access='admin').first()
     if not admin:
         response = {'success': True, 'error': 'There are no admin of this organization'}
-        user.appreoved = True
+        user.approved = True
         db.session.commit()
         return response
     subscription = TgSubscription.query.filter_by(user_id=admin.id).first()
@@ -121,8 +128,36 @@ def registration_notification(user):
 
 @mod_user.route('/user/google/callback', methods=['GET'])
 def google_callback():
-    pass
+    token = oauth.google.authorize_access_token()
+    user_info = oauth.google.parse_id_token(token, nonce=None)
+    email = user_info['email']
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        response = make_response(jsonify({'success': False, 'error': 'User not registered'}))
+        return response, 404
+    if not user.approved:
+        response = make_response(jsonify({'success': False, 'error': 'User not approved'}))
+        return response, 403
+    payload = {
+        'user_id': user.id,
+        'email': user.email,
+        'access': user.access,
+        'approved': user.approved,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+    }
+    token = jwt.encode(payload, current_app.secret_key, algorithm='HS256')
+    response = redirect('http://localhost:3000/')
+    response.set_cookie(
+        'auth_token',
+        token,
+        httponly=True,
+        samesite='None',
+        secure=True,
+        max_age=24*60*60
+    )
+    return response
 
-@mod_user.route('/user/google/login', methods=['POST'])
+@mod_user.route('/user/google/login', methods=['GET'])
 def google_login():
-    pass
+    redirect_uri = url_for('user.google_callback', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
