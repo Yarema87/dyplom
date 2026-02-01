@@ -192,7 +192,7 @@ export default function Home() {
         <button className="telemetry-toggle" onClick={() => tgSubscribe()}>Subscribe to telegram alerts</button>
         {tgModal && (
           <div>
-            <a href={tgLink} target="_blank" rel="noopener noreferrer"><button>Open Telegram</button></a>
+            <a href={tgLink} target="_blank" rel="noopener noreferrer"><button className="telemetry-toggle">Open Telegram</button></a>
           </div>
         )}
         {alerts.length == 0 && (

@@ -5,9 +5,12 @@ from models.tg_subscription import TgSubscription
 import bcrypt
 import datetime
 import jwt
-import asyncio
 from oauth_config import oauth
+import os
+from dotenv import load_dotenv
+import requests
 
+load_dotenv()
 mod_user = Blueprint('user', __name__, url_prefix='/user')
 
 @mod_user.route('/user/sign-up', methods=['POST'])
@@ -38,6 +41,7 @@ def register_user():
         db.session.add(model)
         db.session.commit()
         registration_notification(model)
+        print('Notification system called')
         response = make_response(jsonify({'success': True}))
         return response, 201
     except Exception as e:
@@ -103,28 +107,52 @@ def logout():
     return response, 200
 
 def registration_notification(user):
+    print('Notification system answered')
     admin = User.query.filter_by(organization=user.organization, access='admin').first()
     if not admin:
         response = {'success': True, 'error': 'There are no admin of this organization'}
         user.approved = True
         db.session.commit()
         return response
+    print('Admin found')
     subscription = TgSubscription.query.filter_by(user_id=admin.id).first()
     if not subscription:
         response = {'success': False, 'error': 'Admin will not be notified'}
         return response
     chat_id = subscription.chat_id
+    print('Subscription found')
+    BOT_TOKEN = os.getenv('BOT_TOKEN')
     text = (
         f'New registration!\n\n'
         f'User - {user.name}\n'
         f'Email - {user.email}\n\n'
         f'Approve or dismiss him in app'
     )
-    try:
-        asyncio.run(bot.send_message(chat_id=chat_id, text=text))
-    except RuntimeError:
-        loop = asyncio.get_event_loop()
-        loop.create_task(bot.send_message(chat_id=chat_id, text=text))
+    reply_markup = {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "✅ Approve",
+                    "callback_data": f"approve:{user.id}"
+                },
+                {
+                    "text": "⏳ Not now",
+                    "callback_data": f"later:{user.id}"
+                }
+            ]
+        ]
+    }
+    print('Payload formed')
+    requests.post(
+        f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',
+        json={
+            'chat_id': chat_id,
+            'text': text,
+            'reply_markup': reply_markup
+        },
+        timeout=5
+    )
+    print('Alert sent')
 
 @mod_user.route('/user/google/callback', methods=['GET'])
 def google_callback():

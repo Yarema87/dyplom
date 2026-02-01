@@ -1,8 +1,7 @@
-from telegram import Update
-from telegram.ext import (ApplicationBuilder, CommandHandler, ContextTypes)
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler)
 import os
 from dotenv import load_dotenv
-import requests
 import httpx
 
 load_dotenv()
@@ -68,12 +67,34 @@ async def ping(update, context):
     await update.message.reply_text('Pong')
 
 
+async def approval_callback(update, context):
+    query = update.callback_query
+    await query.answer()
+
+    try:
+        action, user_id = query.data.split(':')
+    except ValueError:
+        await query.edit_message_text('❌ Invalid action.')
+
+    if action == 'approve':
+        async with httpx.AsyncClient() as client:
+            await client.patch(
+                f'http://localhost:5000/api/admin/approve/{user_id}'
+            )
+        await query.edit_message_text("✅ User approved")
+    elif action == 'later':
+        await query.edit_message_text(
+            "ℹ️ You can approve user at any time via web-app."
+        )
+
+
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler('start', start))
-app.add_handler(CommandHandler('stop', stop))
-app.add_handler(CommandHandler('ping', ping))
+bot = ApplicationBuilder().token(BOT_TOKEN).build()
+bot.add_handler(CommandHandler('start', start))
+bot.add_handler(CommandHandler('stop', stop))
+bot.add_handler(CommandHandler('ping', ping))
+bot.add_handler(CallbackQueryHandler(approval_callback))
 
 if __name__ == '__main__':
     print('Bot started')
-    app.run_polling()
+    bot.run_polling()

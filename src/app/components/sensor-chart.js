@@ -26,6 +26,25 @@ function Statistics({sensor_id}){
     }, [sensor_id, days, fetchProgress])
 
     useEffect(() => {
+        const interval = setInterval(() => {
+            const url = (`http://localhost:5000/api/telemetry/${sensor_id}/latest`)
+            axios.get(url)
+            .then(response => {
+                if(response.data.success){
+                    setTelemetry(prev => {
+                        const last = prev.at(-1);
+                        if (!last || last.timestamp !== response.data.telemetry.timestamp){
+                            return [...prev, response.data.telemetry];
+                        }
+                        return prev;
+                    });
+                }
+            });
+        }, 3000)
+        return () => clearInterval(interval);
+    }, [sensor_id])
+
+    useEffect(() => {
         if (!sensor_id) return;
         const url = (`http://localhost:5000/api/sensors/${sensor_id}`);
         axios.get(url)
